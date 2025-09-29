@@ -24,7 +24,6 @@ limiter = Limiter(
     app=app
 )
 
-
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -251,7 +250,7 @@ def _ensure_db():
     if not _db_inited_once:
         init_db()
         _db_inited_once = True
-    # ensure session id cookie exists
+    # ensure session id cookie exists (prepare in g; cookie set in after_request)
     _ensure_sid()
 
 def _hash(value: str) -> str:
@@ -259,17 +258,12 @@ def _hash(value: str) -> str:
     v = (value or '').encode('utf-8')
     return hashlib.sha256(salt.encode('utf-8') + v).hexdigest()
 
-def _ensure_sid(resp=None):
+def _ensure_sid():
     sid = request.cookies.get('sid')
     if not sid:
         sid = uuid.uuid4().hex
-        if resp is None:
-            @app.after_request
-            def _set_sid(r):
-                r.set_cookie('sid', sid, max_age=31536000, httponly=True, samesite='Lax', secure=request.is_secure)
-                return r
-        else:
-            resp.set_cookie('sid', sid, max_age=31536000, httponly=True, samesite='Lax', secure=request.is_secure)
+        # store to set on response
+        setattr(g, '_sid_new', sid)
     return sid
 
 def _client_meta():
@@ -277,7 +271,15 @@ def _client_meta():
     ref = request.headers.get('Referer','')
     xff = request.headers.get('X-Forwarded-For', '')
     ip = (xff.split(',')[0].strip() if xff else (request.remote_addr or ''))
-    return ua, ref, _hash(ip), request.cookies.get('sid') or ''
+    sid = request.cookies.get('sid') or getattr(g, '_sid_new', '') or ''
+    return ua, ref, _hash(ip), sid
+
+@app.after_request
+def _apply_sid_cookie(r):
+    sid = getattr(g, '_sid_new', None)
+    if sid:
+        r.set_cookie('sid', sid, max_age=31536000, httponly=True, samesite='Lax', secure=request.is_secure)
+    return r
 
 def log_search_event(raw_title, raw_country, norm_title, norm_country, sal_floor, sal_ceiling, result_count, page, per_page):
     ua, ref, ip_h, sid = _client_meta()
