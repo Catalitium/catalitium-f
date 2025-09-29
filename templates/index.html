@@ -3,36 +3,50 @@
 
 {% block content %}
 <!-- HERO -->
-<section class="pt-6 sm:pt-10">
-  <div class="mx-auto max-w-4xl">
-    <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-center">
+<section class="pt-6 sm:pt-10" role="region" aria-labelledby="jobs-hero">
+  <div class="mx-auto max-w-4xl text-center">
+    <h1 id="jobs-hero" class="text-3xl sm:text-4xl font-semibold tracking-tight">
       Find your next <span class="text-brand">high-paying</span> role
     </h1>
-    <p class="mt-3 text-slate-600 text-center">Search by title and country/region. Results update on submit.</p>
+    <p class="mt-3 text-slate-600">Search by title and country/region. Results update on submit.</p>
   </div>
 
   <!-- SEARCH: What / Where -->
-  <form id="search" action="{{ url_for('index') }}" method="get"
+  <form id="search"
+        action="{{ url_for('index') }}"
+        method="get"
+        aria-label="Job search"
         class="mx-auto mt-6 max-w-4xl grid grid-cols-1 sm:grid-cols-[1fr_240px_auto] gap-3"
         data-results-count="{{ count|default(0) }}">
     <label for="q" class="sr-only">Job title or keywords</label>
-    <input id="q" name="title" value="{{ title_q or '' }}" autocomplete="off"
+    <input id="q"
+           name="title"
+           value="{{ title_q or '' }}"
+           type="search"
+           autocomplete="off"
            placeholder="What (e.g., Software Engineer, PM, Data, “>100k”, “80k-120k”)"
-           class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand/50">
+           class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-brand/50 focus:outline-none">
 
     <label for="loc" class="sr-only">Country / region</label>
-    <input id="loc" name="country" value="{{ country_q or '' }}" autocomplete="off"
+    <input id="loc"
+           name="country"
+           value="{{ country_q or '' }}"
+           type="search"
+           autocomplete="off"
            placeholder="Where (e.g., DE, EU, Schweiz)"
-           class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand/50">
+           class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-brand/50 focus:outline-none">
 
     <button type="submit"
-            class="rounded-xl bg-brand text-white px-5 py-3 hover:opacity-90">Search</button>
+            class="rounded-xl bg-brand text-white px-5 py-3 hover:opacity-90 transition">
+      Search
+    </button>
   </form>
 
-  <!-- META / FILTERS + Subtle reminders toggle -->
+  <!-- META / FILTERS -->
   <div class="mx-auto max-w-4xl mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
     <div class="flex items-center gap-2 flex-wrap">
       <span>{{ count|default(0) }} result{{ '' if count==1 else 's' }}</span>
+
       {% if title_q or country_q %}
         <span>•</span>
         {% if title_q %}
@@ -45,42 +59,55 @@
       {% endif %}
     </div>
 
+    <!-- Subscribe toggle -->
     <label for="weekly-toggle" class="flex items-center gap-2 cursor-pointer select-none">
-      <input id="weekly-toggle" type="checkbox" class="peer sr-only" aria-controls="subscribeDialog" aria-describedby="weekly-help">
+      <input id="weekly-toggle"
+             type="checkbox"
+             class="peer sr-only"
+             aria-controls="subscribeDialog"
+             aria-describedby="weekly-help">
       <span class="relative inline-flex h-5 w-9 items-center rounded-full bg-slate-300 peer-checked:bg-brand transition">
         <span class="absolute left-1 peer-checked:left-5 inline-block h-4 w-4 rounded-full bg-white shadow transition"></span>
       </span>
       <span class="text-slate-700">Get weekly job reminders</span>
     </label>
   </div>
-  <p id="weekly-help" class="mx-auto max-w-4xl mt-1 text-[11px] text-right text-slate-500">
+  <p id="weekly-help"
+     class="mx-auto max-w-4xl mt-1 text-[11px] text-right text-slate-500">
     One concise email per week. No spam.
   </p>
 </section>
-
 <!-- RESULTS LIST -->
-<section class="mx-auto max-w-4xl mt-6">
+<section class="mx-auto max-w-4xl mt-6" aria-label="Job results">
   <div class="grid grid-cols-1 gap-3">
     {% set CUR = {'EUR':'€','USD':'$','GBP':'£','CHF':'CHF'} %}
+    <!-- Sponsored job slot (reserved) -->
+    <div class="rounded-xl border border-amber-300/60 bg-amber-50 p-4 text-amber-800">
+      <div class="text-xs uppercase tracking-wide font-semibold">Sponsored</div>
+      <p class="text-sm">Your job here. Reach top talent. <a href="#" class="underline" data-open-subscribe>Contact us</a>.</p>
+    </div>
     {% for j in results or [] %}
-    <article class="rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors">
-      <div class="flex items-start justify-between gap-3">
+    <article class="rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
+             data-job-id="{{ j.id }}">
+      <header class="flex items-start justify-between gap-3">
         <div class="min-w-0">
           <h2 class="text-base font-semibold leading-tight truncate">{{ j.title }}</h2>
           <p class="text-slate-600 text-xs mt-0.5 truncate">
             {{ j.company }} • {{ j.location }}
           </p>
         </div>
-      </div>
+      </header>
 
-      <!-- Salary: offered, reference (City→Country→Global), and delta -->
+      <!-- Salary & reference -->
       <div class="mt-2 text-[11px] text-slate-600 flex items-center gap-3 flex-wrap">
         {% set offer_mid = None %}
         {% if j.salary_min or j.salary_max %}
           {% set offer_min = j.salary_min or j.salary_max %}
           {% set offer_max = j.salary_max or j.salary_min %}
           {% set offer_mid = (offer_min + offer_max) / 2 %}
-          <span>💰 {{ '{:,}'.format(offer_min) }}{% if j.salary_max %}–{{ '{:,}'.format(offer_max) }}{% endif %}</span>
+          <span aria-label="Offered salary">
+            💰 {{ '{:,}'.format(offer_min) }}{% if j.salary_max %}–{{ '{:,}'.format(offer_max) }}{% endif %}
+          </span>
         {% endif %}
 
         {% if j.ref_median or j.ref_min %}
@@ -101,19 +128,20 @@
           {% endif %}
         {% endif %}
 
-        {% if j.date_posted %}<span class="text-slate-500">📅 {{ j.date_posted }}</span>{% endif %}
+        {% if j.date_posted %}
+          <span class="text-slate-500">📅 {{ j.date_posted }}</span>
+        {% endif %}
       </div>
 
+      <!-- Details toggle -->
       <div class="mt-2">
         <button type="button"
                 class="text-[12px] underline hover:text-brand"
                 data-toggle="details"
-                data-job-id="{{ j.id }}"
-                data-job-title="{{ j.title }}"
-                data-company="{{ j.company }}">
+                aria-expanded="false">
           Details
         </button>
-        <div class="mt-2 hidden" data-details-for="{{ j.id }}">
+        <div class="mt-2 hidden" data-details>
           <p class="text-sm text-slate-700 whitespace-pre-line">{{ j.description }}</p>
         </div>
       </div>
@@ -129,150 +157,80 @@
 
 <!-- Pagination -->
 {% if pagination and (pagination.has_prev or pagination.has_next) %}
-<nav class="mx-auto max-w-4xl mt-4 flex items-center justify-between text-sm">
+<nav class="mx-auto max-w-4xl mt-4 flex items-center justify-between text-sm"
+     role="navigation" aria-label="Pagination">
   <a class="px-3 py-2 rounded-lg border border-slate-200 hover:border-brand {{ '' if pagination.has_prev else 'pointer-events-none opacity-50' }}"
      href="{{ pagination.prev_url or '#' }}">← Prev</a>
-  <span class="text-slate-500">Page {{ pagination.page }} of {{ pagination.pages }} • {{ pagination.total }} total</span>
+  <span class="text-slate-500">
+    Page {{ pagination.page }} of {{ pagination.pages }} • {{ pagination.total }} total
+  </span>
   <a class="px-3 py-2 rounded-lg border border-slate-200 hover:border-brand {{ '' if pagination.has_next else 'pointer-events-none opacity-50' }}"
-     href="{{ pagination.next_url or '#' }}">Next →</a>
+     href="{{ pagination.next_url or '#' }}">Next →
+  </a>
 </nav>
 {% endif %}
 
-<!-- Minimal subscribe dialog (conversion-focused) -->
-<dialog id="subscribeDialog" class="rounded-2xl p-0 backdrop:bg-slate-900/40">
-  <form method="dialog" class="absolute right-3 top-3">
-    <button aria-label="Close dialog"
-            class="rounded-lg border border-slate-200 px-2 py-1 text-slate-600 hover:text-slate-900 hover:border-slate-300">✕</button>
-  </form>
-  <div class="p-6 sm:p-7 w-[90vw] max-w-md">
-    <div class="flex items-center gap-2">
-      <span class="inline-grid place-items-center w-9 h-9 rounded-full bg-brand text-white font-semibold">C</span>
-      <h2 class="text-lg font-semibold">Weekly job reminders</h2>
-    </div>
-    <p class="mt-2 text-slate-600 text-sm">One tidy email with new high-signal roles. Unsubscribe anytime.</p>
-
-    <form action="{{ url_for('subscribe') }}" method="post"
-          class="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
-      <label for="subscribe-email" class="sr-only">Email</label>
-      <input id="subscribe-email" name="email" type="email" required autocomplete="email"
-             placeholder="you@company.com"
-             class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand/50">
-      <button type="submit" class="inline-flex justify-center rounded-xl bg-brand text-white px-5 py-3 hover:opacity-90">
-        Subscribe
-      </button>
-    </form>
-
-    <p class="mt-2 text-[11px] text-slate-500">Privacy-friendly. We’ll only email once a week.</p>
-  </div>
-</dialog>
+<!-- Subscribe dialog is defined globally in base.html -->
 {% endblock %}
 
 {% block body_extra %}
 <script>
-  (function() {
-    // --- Normalization mirrors server (light) ---
-    var form = document.getElementById('search');
-    var q = document.getElementById('q');
-    var loc = document.getElementById('loc');
+(() => {
+  const form = document.getElementById('search');
+  const q = document.getElementById('q');
+  const loc = document.getElementById('loc');
+  const toggle = document.getElementById('weekly-toggle');
+  const dlg = document.getElementById('subscribeDialog');
 
-    var COUNTRY_MAP = {
-      "de":"DE","deu":"DE","germany":"DE","deutschland":"DE",
-      "ch":"CH","schweiz":"CH","suisse":"CH","svizzera":"CH","switzerland":"CH",
-      "at":"AT","österreich":"AT","austria":"AT",
-      "eu":"EU","europe":"EU",
-      "uk":"UK","gb":"UK","england":"UK","united kingdom":"UK",
-      "us":"US","usa":"US","united states":"US","america":"US"
-    };
-    var TITLE_MAP = {
-      "swe":"software engineer","software eng":"software engineer","sw eng":"software engineer",
-      "frontend":"front end","backend":"back end","fullstack":"full stack",
-      "pm":"product manager","ds":"data scientist","ml":"machine learning",
-      "mle":"machine learning engineer","sre":"site reliability engineer","devops":"devops"
-    };
+  // Normalize input (matches server logic)
+  const COUNTRY_MAP = { de:"DE", deu:"DE", germany:"DE", deutschland:"DE", ch:"CH", schweiz:"CH", suisse:"CH", svizzera:"CH", switzerland:"CH", at:"AT", österreich:"AT", austria:"AT", eu:"EU", europe:"EU", uk:"UK", gb:"UK", england:"UK", "united kingdom":"UK", us:"US", usa:"US", "united states":"US", america:"US", es:"ES", spain:"ES", fr:"FR", france:"FR", it:"IT", italy:"IT", nl:"NL", netherlands:"NL", be:"BE", belgium:"BE", se:"SE", sweden:"SE", pl:"PL", poland:"PL", co:"CO", colombia:"CO", mx:"MX", mexico:"MX" };
+  const TITLE_MAP = { swe:"software engineer", "software eng":"software engineer", "sw eng":"software engineer", frontend:"front end", "front-end":"front end", backend:"back end", "back-end":"back end", fullstack:"full stack", "full-stack":"full stack", pm:"product manager", "prod mgr":"product manager", "product owner":"product manager", ds:"data scientist", ml:"machine learning", mle:"machine learning engineer", sre:"site reliability engineer", devops:"devops", "sec eng":"security engineer", infosec:"security" };
 
-    function normCountry(v){
-      if(!v) return "";
-      var t=v.trim().toLowerCase();
-      if(COUNTRY_MAP[t]) return COUNTRY_MAP[t];
-      if(/^[a-z]{2}$/.test(t)) return t.toUpperCase();
-      return v.trim();
-    }
-    function normTitle(v){
-      if(!v) return "";
-      var s=v.toLowerCase();
-      Object.keys(TITLE_MAP).forEach(function(k){ if(s.includes(k)) s=s.replace(new RegExp(k,'g'),TITLE_MAP[k]); });
-      return s.replace(/\s+/g,' ').trim();
-    }
+  const normCountry = v => { if (!v) return ""; const t = v.trim().toLowerCase(); if (COUNTRY_MAP[t]) return COUNTRY_MAP[t]; if (/^[a-z]{2}$/.test(t)) return t.toUpperCase(); return v.trim(); };
+  const normTitle = v => { if (!v) return ""; let s = v.toLowerCase(); Object.entries(TITLE_MAP).forEach(([k, val]) => { if (s.includes(k)) s = s.replace(new RegExp(k,"g"), val); }); return s.replace(/\s+/g," ").trim(); };
 
-    // GTM-friendly events on load & submit
-    var params = new URLSearchParams(window.location.search);
-    var tq = (params.get('title') || '').trim();
-    var cq = (params.get('country') || '').trim();
-    var rc = Number(form.dataset.resultsCount || 0);
-    if (tq || cq) {
-      window.dispatchEvent(new CustomEvent('jobs:search', {
-        detail: { search_term: tq, country: cq, results_count: rc, source: 'url' }
-      }));
-    }
-    form.addEventListener('submit', function(){
-      var nt = normTitle(q.value), nc = normCountry(loc.value);
-      q.value = nt; loc.value = nc;
-      // ensure page resets to 1 on new search
-      (new URL(window.location)).searchParams.set('page', '1');
-      window.dispatchEvent(new CustomEvent('jobs:search', {
-        detail: { search_term: nt, country: nc, results_count: rc, source: 'form' }
-      }));
+  // Submit normalization + GTM event
+  form?.addEventListener('submit', () => {
+    q.value = normTitle(q.value);
+    loc.value = normCountry(loc.value);
+    window.dispatchEvent(new CustomEvent('jobs:search', { detail: { search_term: q.value, country: loc.value, results_count: Number(form.dataset.resultsCount||0), source: 'form' } }));
+  });
+
+  // Weekly toggle → subscribe modal
+  if (toggle && dlg && dlg.showModal) {
+    toggle.addEventListener('change', () => { if (toggle.checked) { dlg.showModal(); document.getElementById('subscribe-email')?.focus(); }});
+    dlg.addEventListener('close', () => { toggle.checked = false; });
+    dlg.addEventListener('click', e => { const r = dlg.getBoundingClientRect(); if (e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) dlg.close(); });
+  }
+
+  // Job details toggle
+  document.querySelectorAll('[data-toggle="details"]').forEach(btn => {
+    let opened = false;
+    btn.addEventListener('click', () => {
+      const container = btn.closest('article')?.querySelector('[data-details]');
+      if (!container) return;
+      container.classList.toggle('hidden');
+      const expanded = !container.classList.contains('hidden');
+      btn.setAttribute('aria-expanded', expanded);
+      if (expanded && !opened) {
+        opened = true;
+        window.dispatchEvent(new CustomEvent('jobs:view', { detail: { job_title: btn.dataset.jobTitle, company: btn.dataset.company }}));
+        try {
+          const art = btn.closest('article');
+          const id = art?.getAttribute('data-job-id');
+          const company = art?.querySelector('.text-slate-600')?.textContent || '';
+          const title = art?.querySelector('h2')?.textContent || '';
+          const location = company.split('•')[1] || '';
+          fetch('/events/job_view', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ job_id: id, job_title: title, company: company.split('•')[0]?.trim() || '', location: location.trim() })}).catch(()=>{});
+        } catch(e){}
+      }
     });
+  });
 
-    // Subtle reminders toggle → open dialog
-    var toggle = document.getElementById('weekly-toggle');
-    var dlg = document.getElementById('subscribeDialog');
-    if (toggle && dlg && dlg.showModal) {
-      toggle.addEventListener('change', function() {
-        if (toggle.checked) {
-          dlg.showModal();
-          document.getElementById('subscribe-email')?.focus();
-        }
-      });
-      // close on backdrop click
-      dlg.addEventListener('click', function(e){
-        var r = dlg.getBoundingClientRect();
-        var inside = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
-        if (!inside) dlg.close();
-      });
-      // reset toggle when dialog closes
-      dlg.addEventListener('close', function(){ toggle.checked = false; });
-    }
-
-    // Expand details + fire job_view once
-    document.querySelectorAll('[data-toggle="details"]').forEach(function(btn){
-      var opened=false;
-      btn.addEventListener('click', function(){
-        var id = btn.getAttribute('data-job-id');
-        var body = document.querySelector('[data-details-for="'+id+'"]');
-        if(!body) return;
-        var wasHidden = body.classList.contains('hidden');
-        body.classList.toggle('hidden');
-        if(wasHidden && !opened){
-          opened=true;
-          window.dispatchEvent(new CustomEvent('jobs:view', {
-            detail: { job_id:Number(id), job_title:btn.getAttribute('data-job-title'), company:btn.getAttribute('data-company') }
-          }));
-        }
-      });
-    });
-  })();
-
-      // Nav/footer links → open same subscribe modal
-    document.querySelectorAll('[data-open-subscribe]').forEach(function(el){
-      el.addEventListener('click', function(e){
-        e.preventDefault();
-        if (dlg && dlg.showModal) {
-          dlg.showModal();
-          document.getElementById('subscribe-email')?.focus();
-        }
-      });
-    });
-
+  // Links that open the subscribe modal
+  document.querySelectorAll('[data-open-subscribe]').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); dlg?.showModal(); document.getElementById('subscribe-email')?.focus(); });
+  });
+})();
 </script>
 {% endblock %}

@@ -6,15 +6,12 @@
   <title>{% block title %}Catalitium{% endblock %}</title>
   <meta name="theme-color" content="#1a73e8" />
 
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-N8G6ZYS32D"></script>
-<script>
+  <!-- Google tag (gtag.js) placeholder (monetization-ready) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-N8G6ZYS32D"></script>
+  <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-N8G6ZYS32D');
-</script>
+  function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-N8G6ZYS32D');
+  </script>
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -117,6 +114,12 @@
         <a href="#" data-open-subscribe class="hover:text-brand">Newsletter</a>
       </div>
     </div>
+    <!-- AdSense placeholder -->
+    <div class="mx-auto max-w-6xl px-4 pb-6">
+      <div class="rounded-xl border border-dashed border-slate-300 p-4 text-center text-slate-500 text-sm">
+        Ad placeholder (Google AdSense)
+      </div>
+    </div>
   </footer>
 
   <!-- Analytics + Nav sheet -->
@@ -138,6 +141,40 @@
       document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
     })();
   </script>
+
+  <!-- Global Subscribe dialog -->
+  <dialog id="subscribeDialog" class="rounded-2xl p-0 backdrop:bg-slate-900/40"
+          aria-labelledby="subscribe-title">
+    <form method="dialog" class="absolute right-3 top-3">
+      <button aria-label="Close dialog"
+              class="rounded-lg border border-slate-200 px-2 py-1 text-slate-600 hover:text-slate-900 hover:border-slate-300">✕</button>
+    </form>
+    <div class="p-6 sm:p-7 w-[90vw] max-w-md">
+      <div class="flex items-center gap-2">
+        <span class="inline-grid place-items-center w-9 h-9 rounded-full bg-brand text-white font-semibold">C</span>
+        <h2 id="subscribe-title" class="text-lg font-semibold">Weekly job reminders</h2>
+      </div>
+      <p class="mt-2 text-slate-600 text-sm">One tidy email with new high-signal roles. Unsubscribe anytime.</p>
+
+      <form action="{{ url_for('subscribe') }}" method="post"
+            class="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+        <label for="subscribe-email" class="sr-only">Email</label>
+        <input id="subscribe-email"
+               name="email"
+               type="email"
+               required
+               autocomplete="email"
+               placeholder="you@company.com"
+               class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-brand/50 focus:outline-none">
+        <button type="submit"
+                class="inline-flex justify-center rounded-xl bg-brand text-white px-5 py-3 hover:opacity-90">
+          Subscribe
+        </button>
+      </form>
+
+      <p class="mt-2 text-[11px] text-slate-500">Privacy-friendly. We’ll only email once a week.</p>
+    </div>
+  </dialog>
 
   {% block body_extra %}{% endblock %}
 </body>
